@@ -15,12 +15,18 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
             cross: false
           - target: aarch64-linux-android
+            os: ubuntu-latest
             cross: true
           - target: x86_64-linux-android
+            os: ubuntu-latest
             cross: true
-    runs-on: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            cross: false
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,10 +49,15 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       - name: Package
+        shell: bash
         run: |
           set -euo pipefail
           asset="reflector-client-${{ matrix.target }}.tar.gz"
-          tar czf "$asset" -C "target/${{ matrix.target }}/release" reflector-client
+          bin="reflector-client"
+          if [[ "${{ matrix.os }}" == windows-latest ]]; then
+            bin="reflector-client.exe"
+          fi
+          tar czf "$asset" -C "target/${{ matrix.target }}/release" "$bin"
           echo "ASSET=$asset" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
