@@ -1,4 +1,3 @@
-use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -17,7 +16,9 @@ struct ReflectorResponse {
 }
 
 fn config_path() -> PathBuf {
-    let home = std::env::var("HOME").expect("HOME environment variable is not set");
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .expect("HOME or USERPROFILE environment variable is not set");
     PathBuf::from(home).join(".config").join("reflector.json")
 }
 
@@ -66,12 +67,15 @@ fn main() {
     let config = load_config();
     let ip = fetch_ip(&config);
 
-    let err = Command::new("ssh")
+    let status = Command::new("ssh")
         .arg("-t")
         .arg(format!("ubuntu@{ip}"))
         .arg("tmux new -As default")
-        .exec();
+        .status()
+        .unwrap_or_else(|e| {
+            eprintln!("failed to run ssh: {e}");
+            std::process::exit(1);
+        });
 
-    eprintln!("failed to exec ssh: {err}");
-    std::process::exit(1);
+    std::process::exit(status.code().unwrap_or(1));
 }
