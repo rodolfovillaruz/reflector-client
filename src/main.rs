@@ -34,8 +34,26 @@ fn load_config() -> Config {
     })
 }
 
+fn build_client() -> reqwest::blocking::Client {
+    // reqwest 0.13's default rustls verifier is rustls-platform-verifier, which
+    // panics on Android/Termux because it needs a JNI Context we don't have.
+    // Verify against the bundled webpki roots instead.
+    let roots = rustls::RootCertStore::from_iter(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+    let tls = rustls::ClientConfig::builder()
+        .with_root_certificates(roots)
+        .with_no_client_auth();
+
+    reqwest::blocking::Client::builder()
+        .tls_backend_preconfigured(tls)
+        .build()
+        .unwrap_or_else(|e| {
+            eprintln!("failed to build HTTP client: {e}");
+            std::process::exit(1);
+        })
+}
+
 fn fetch_ip(config: &Config) -> String {
-    let client = reqwest::blocking::Client::new();
+    let client = build_client();
     let res = client
         .get(&config.url)
         .header("X-Auth-Token", &config.auth_token)

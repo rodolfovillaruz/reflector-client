@@ -1,12 +1,13 @@
 [package]
 name = "reflector-client"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 repository = "https://github.com/rodolfovillaruz/reflector-client"
 
 [dependencies]
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls-no-provider"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+webpki-roots = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
