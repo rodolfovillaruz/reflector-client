@@ -69,6 +69,10 @@ fn main() {
         return;
     }
 
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("failed to install rustls crypto provider");
+
     let config = load_config();
     let ip = fetch_ip(&config);
 
