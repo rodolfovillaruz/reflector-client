@@ -28,7 +28,7 @@ Prebuilt binaries are published for:
 To pin a specific release, add `--version <x.y.z>`, e.g.:
 
 ```sh
-cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.5 reflector-client
+cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.6 reflector-client
 ```
 
 ### From source
