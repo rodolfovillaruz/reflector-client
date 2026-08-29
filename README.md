@@ -25,7 +25,11 @@ Prebuilt binaries are published for:
 | `aarch64-linux-android`       | Android / Termux (arm64)     |
 | `x86_64-linux-android`        | Android (x86-64)             |
 
-To pin a specific release, add `--version <x.y.z>`.
+To pin a specific release, add `--version <x.y.z>`, e.g.:
+
+```sh
+cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.3 reflector-client
+```
 
 ### From source
 
