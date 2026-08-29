@@ -2,6 +2,30 @@
 
 Fetches an instance IP from a reflector service and SSHes in.
 
+## Usage
+
+```sh
+reflector-client            # or: reflector-client connect
+```
+
+Fetches the instance IP from the reflector (starting the instance if it is
+stopped and waiting for it to become reachable) and opens an SSH session into
+`tmux new -As default`.
+
+```sh
+reflector-client status
+```
+
+Prints the instance's current state and public IP without starting it or
+opening a session:
+
+```
+state: running
+ip: 203.0.113.7
+```
+
+`ip` is `-` when the instance has no public address (e.g. it is stopped).
+
 ## Install
 
 ### Prebuilt binary (recommended)

@@ -15,6 +15,13 @@ struct ReflectorResponse {
     error: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct StatusResponse {
+    state: Option<String>,
+    ip: Option<String>,
+    error: Option<String>,
+}
+
 fn config_path() -> PathBuf {
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
@@ -52,6 +59,11 @@ fn build_client() -> reqwest::blocking::Client {
         })
 }
 
+fn with_action(base: &str, action: &str) -> String {
+    let sep = if base.contains('?') { '&' } else { '?' };
+    format!("{base}{sep}action={action}")
+}
+
 fn fetch_ip(config: &Config) -> String {
     let client = build_client();
     let res = client
@@ -81,18 +93,36 @@ fn fetch_ip(config: &Config) -> String {
     })
 }
 
-fn main() {
-    if std::env::args().any(|a| a == "--version" || a == "-V") {
-        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-        return;
+fn run_status(config: &Config) {
+    let client = build_client();
+    let url = with_action(&config.url, "status");
+    let res = client
+        .get(&url)
+        .header("X-Auth-Token", &config.auth_token)
+        .send()
+        .unwrap_or_else(|e| {
+            eprintln!("request to {url} failed: {e}");
+            std::process::exit(1);
+        });
+
+    let status = res.status();
+    let body: StatusResponse = res.json().unwrap_or_else(|e| {
+        eprintln!("failed to parse response from {url}: {e}");
+        std::process::exit(1);
+    });
+
+    if !status.is_success() {
+        let msg = body.error.unwrap_or_else(|| status.to_string());
+        eprintln!("reflector returned an error: {msg}");
+        std::process::exit(1);
     }
 
-    rustls::crypto::ring::default_provider()
-        .install_default()
-        .expect("failed to install rustls crypto provider");
+    println!("state: {}", body.state.as_deref().unwrap_or("unknown"));
+    println!("ip: {}", body.ip.as_deref().unwrap_or("-"));
+}
 
-    let config = load_config();
-    let ip = fetch_ip(&config);
+fn run_connect(config: &Config) {
+    let ip = fetch_ip(config);
 
     let status = Command::new("ssh")
         .arg("-t")
@@ -109,4 +139,29 @@ fn main() {
         });
 
     std::process::exit(status.code().unwrap_or(1));
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    if args.iter().any(|a| a == "--version" || a == "-V") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("failed to install rustls crypto provider");
+
+    let config = load_config();
+
+    match args.first().map(String::as_str) {
+        None | Some("connect") => run_connect(&config),
+        Some("status") => run_status(&config),
+        Some(other) => {
+            eprintln!("unknown command: {other}");
+            eprintln!("usage: reflector-client [connect|status]");
+            std::process::exit(2);
+        }
+    }
 }
