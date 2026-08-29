@@ -64,7 +64,7 @@ fn fetch_ip(config: &Config) -> String {
 }
 
 fn main() {
-    if std::env::args().skip(1).any(|a| a == "--version" || a == "-V") {
+    if std::env::args().any(|a| a == "--version" || a == "-V") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return;
     }
