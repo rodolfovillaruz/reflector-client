@@ -78,7 +78,7 @@ jobs:
           tar czf "$asset" -C "target/${{ matrix.target }}/release" "$bin"
           echo "ASSET=$asset" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ASSET }}
           path: ${{ env.ASSET }}
@@ -87,13 +87,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*.tar.gz
           generate_release_notes: true
