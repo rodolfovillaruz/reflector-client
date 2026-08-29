@@ -28,7 +28,7 @@ Prebuilt binaries are published for:
 To pin a specific release, add `--version <x.y.z>`, e.g.:
 
 ```sh
-cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.3 reflector-client
+cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.4 reflector-client
 ```
 
 ### From source
@@ -47,3 +47,10 @@ Requires `~/.config/reflector.json` (`%USERPROFILE%\.config\reflector.json` on W
   "auth_token": "..."
 }
 ```
+
+## SSH host key checking
+
+The reflector hands back a different IP over time, so SSH's normal host key
+verification would fail on every address change. `reflector-client` invokes `ssh`
+with `-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`, so host keys
+are neither verified nor recorded in `~/.ssh/known_hosts`.

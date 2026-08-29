@@ -69,6 +69,10 @@ fn main() {
 
     let status = Command::new("ssh")
         .arg("-t")
+        .arg("-o")
+        .arg("StrictHostKeyChecking=no")
+        .arg("-o")
+        .arg("UserKnownHostsFile=/dev/null")
         .arg(format!("ubuntu@{ip}"))
         .arg("tmux new -As default")
         .status()
