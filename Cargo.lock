@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "reflector-client"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "reqwest",
  "rustls",

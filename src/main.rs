@@ -121,7 +121,7 @@ fn run_status(config: &Config) {
     println!("ip: {}", body.ip.as_deref().unwrap_or("-"));
 }
 
-fn run_connect(config: &Config, forwards: &[String]) {
+fn run_ssh(config: &Config, forwards: &[String], remote_command: Option<&str>) {
     let ip = fetch_ip(config);
 
     let mut cmd = Command::new("ssh");
@@ -135,14 +135,15 @@ fn run_connect(config: &Config, forwards: &[String]) {
         cmd.arg("-L").arg(spec);
     }
 
-    let status = cmd
-        .arg(format!("ubuntu@{ip}"))
-        .arg("tmux new -As default")
-        .status()
-        .unwrap_or_else(|e| {
-            eprintln!("failed to run ssh: {e}");
-            std::process::exit(1);
-        });
+    cmd.arg(format!("ubuntu@{ip}"));
+    if let Some(remote_command) = remote_command {
+        cmd.arg(remote_command);
+    }
+
+    let status = cmd.status().unwrap_or_else(|e| {
+        eprintln!("failed to run ssh: {e}");
+        std::process::exit(1);
+    });
 
     std::process::exit(status.code().unwrap_or(1));
 }
@@ -206,10 +207,11 @@ fn main() {
     let args = parse_args(raw_args);
 
     match args.command.as_deref() {
-        None | Some("connect") => run_connect(&config, &args.forwards),
+        None | Some("connect") => run_ssh(&config, &args.forwards, Some("tmux new -As default")),
+        Some("ssh") => run_ssh(&config, &args.forwards, None),
         Some("status") => {
             if !args.forwards.is_empty() {
-                eprintln!("-L is only supported with the connect command");
+                eprintln!("-L is only supported with the connect and ssh commands");
                 std::process::exit(2);
             }
             run_status(&config)
@@ -217,7 +219,7 @@ fn main() {
         Some(other) => {
             eprintln!("unknown command: {other}");
             eprintln!(
-                "usage: reflector-client [connect|status] [-L bind_address:port:host:hostport]..."
+                "usage: reflector-client [connect|ssh|status] [-L bind_address:port:host:hostport]..."
             );
             std::process::exit(2);
         }

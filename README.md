@@ -19,6 +19,12 @@ same syntax as `ssh -L`:
 reflector-client connect -L 5000:127.0.0.1:5000
 ```
 
+Use `ssh` instead of `connect` for a plain SSH session (no tmux):
+
+```sh
+reflector-client ssh
+```
+
 ```sh
 reflector-client status
 ```
@@ -59,7 +65,7 @@ Prebuilt binaries are published for:
 To pin a specific release, add `--version <x.y.z>`, e.g.:
 
 ```sh
-cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.10 reflector-client
+cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.11 reflector-client
 ```
 
 ### From source
