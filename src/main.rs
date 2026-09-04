@@ -121,15 +121,21 @@ fn run_status(config: &Config) {
     println!("ip: {}", body.ip.as_deref().unwrap_or("-"));
 }
 
-fn run_connect(config: &Config) {
+fn run_connect(config: &Config, forwards: &[String]) {
     let ip = fetch_ip(config);
 
-    let status = Command::new("ssh")
-        .arg("-t")
+    let mut cmd = Command::new("ssh");
+    cmd.arg("-t")
         .arg("-o")
         .arg("StrictHostKeyChecking=no")
         .arg("-o")
-        .arg("UserKnownHostsFile=/dev/null")
+        .arg("UserKnownHostsFile=/dev/null");
+
+    for spec in forwards {
+        cmd.arg("-L").arg(spec);
+    }
+
+    let status = cmd
         .arg(format!("ubuntu@{ip}"))
         .arg("tmux new -As default")
         .status()
@@ -141,10 +147,53 @@ fn run_connect(config: &Config) {
     std::process::exit(status.code().unwrap_or(1));
 }
 
-fn main() {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+/// Validates a `-L` forward spec of the form `[bind_address:]port:host:hostport`
+/// and returns it unchanged for handing off to ssh.
+fn validate_forward_spec(spec: &str) -> &str {
+    if spec.splitn(4, ':').count() < 3 {
+        eprintln!("invalid -L argument: {spec}");
+        eprintln!(
+            "expected format: [bind_address:]port:host:hostport (e.g. -L 5000:127.0.0.1:5000)"
+        );
+        std::process::exit(2);
+    }
+    spec
+}
 
-    if args.iter().any(|a| a == "--version" || a == "-V") {
+struct Args {
+    command: Option<String>,
+    forwards: Vec<String>,
+}
+
+fn parse_args(raw: Vec<String>) -> Args {
+    let mut command = None;
+    let mut forwards = Vec::new();
+    let mut iter = raw.into_iter();
+
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-L" | "--local-forward" => {
+                let spec = iter.next().unwrap_or_else(|| {
+                    eprintln!("{arg} requires an argument, e.g. {arg} 5000:127.0.0.1:5000");
+                    std::process::exit(2);
+                });
+                forwards.push(validate_forward_spec(&spec).to_string());
+            }
+            other if command.is_none() => command = Some(other.to_string()),
+            other => {
+                eprintln!("unexpected argument: {other}");
+                std::process::exit(2);
+            }
+        }
+    }
+
+    Args { command, forwards }
+}
+
+fn main() {
+    let raw_args: Vec<String> = std::env::args().skip(1).collect();
+
+    if raw_args.iter().any(|a| a == "--version" || a == "-V") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return;
     }
@@ -154,13 +203,22 @@ fn main() {
         .expect("failed to install rustls crypto provider");
 
     let config = load_config();
+    let args = parse_args(raw_args);
 
-    match args.first().map(String::as_str) {
-        None | Some("connect") => run_connect(&config),
-        Some("status") => run_status(&config),
+    match args.command.as_deref() {
+        None | Some("connect") => run_connect(&config, &args.forwards),
+        Some("status") => {
+            if !args.forwards.is_empty() {
+                eprintln!("-L is only supported with the connect command");
+                std::process::exit(2);
+            }
+            run_status(&config)
+        }
         Some(other) => {
             eprintln!("unknown command: {other}");
-            eprintln!("usage: reflector-client [connect|status]");
+            eprintln!(
+                "usage: reflector-client [connect|status] [-L bind_address:port:host:hostport]..."
+            );
             std::process::exit(2);
         }
     }

@@ -12,6 +12,13 @@ Fetches the instance IP from the reflector (starting the instance if it is
 stopped and waiting for it to become reachable) and opens an SSH session into
 `tmux new -As default`.
 
+Pass one or more `-L` flags to forward local ports through the SSH session,
+same syntax as `ssh -L`:
+
+```sh
+reflector-client connect -L 5000:127.0.0.1:5000
+```
+
 ```sh
 reflector-client status
 ```
@@ -52,7 +59,7 @@ Prebuilt binaries are published for:
 To pin a specific release, add `--version <x.y.z>`, e.g.:
 
 ```sh
-cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.9 reflector-client
+cargo binstall --git https://github.com/rodolfovillaruz/reflector-client --version 0.1.10 reflector-client
 ```
 
 ### From source
