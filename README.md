@@ -28,7 +28,7 @@ opening a session:
 
 ```
 state: running
-ip: 203.0.113.7
+ip: <instance-public-ip>
 ```
 
 `ip` is `-` when the instance has no public address (e.g. it is stopped).
