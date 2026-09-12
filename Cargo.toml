@@ -1,6 +1,6 @@
 [package]
 name = "reflector-client"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2024"
 repository = "https://github.com/rodolfovillaruz/reflector-client"
 
