@@ -71,9 +71,9 @@ jobs:
         run: |
           set -euo pipefail
           asset="reflector-client-${{ matrix.target }}.tar.gz"
-          bin="reflector-client"
+          bin="reflector"
           if [[ "${{ matrix.os }}" == windows-latest ]]; then
-            bin="reflector-client.exe"
+            bin="reflector.exe"
           fi
           tar czf "$asset" -C "target/${{ matrix.target }}/release" "$bin"
           echo "ASSET=$asset" >> "$GITHUB_ENV"

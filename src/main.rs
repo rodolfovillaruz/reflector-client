@@ -219,7 +219,7 @@ fn main() {
         Some(other) => {
             eprintln!("unknown command: {other}");
             eprintln!(
-                "usage: reflector-client [connect|ssh|status] [-L bind_address:port:host:hostport]..."
+                "usage: reflector [connect|ssh|status] [-L bind_address:port:host:hostport]..."
             );
             std::process::exit(2);
         }

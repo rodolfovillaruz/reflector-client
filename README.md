@@ -5,7 +5,7 @@ Fetches an instance IP from a reflector service and SSHes in.
 ## Usage
 
 ```sh
-reflector-client            # or: reflector-client connect
+reflector                   # or: reflector connect
 ```
 
 Fetches the instance IP from the reflector (starting the instance if it is
@@ -16,17 +16,17 @@ Pass one or more `-L` flags to forward local ports through the SSH session,
 same syntax as `ssh -L`:
 
 ```sh
-reflector-client connect -L 5000:127.0.0.1:5000
+reflector connect -L 5000:127.0.0.1:5000
 ```
 
 Use `ssh` instead of `connect` for a plain SSH session (no tmux):
 
 ```sh
-reflector-client ssh
+reflector ssh
 ```
 
 ```sh
-reflector-client status
+reflector status
 ```
 
 Prints the instance's current state and public IP without starting it or
@@ -88,6 +88,6 @@ Requires `~/.config/reflector.json` (`%USERPROFILE%\.config\reflector.json` on W
 ## SSH host key checking
 
 The reflector hands back a different IP over time, so SSH's normal host key
-verification would fail on every address change. `reflector-client` invokes `ssh`
+verification would fail on every address change. `reflector` invokes `ssh`
 with `-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`, so host keys
 are neither verified nor recorded in `~/.ssh/known_hosts`.
