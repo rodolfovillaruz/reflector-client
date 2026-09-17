@@ -161,14 +161,32 @@ fn validate_forward_spec(spec: &str) -> &str {
     spec
 }
 
+/// Validates a tmux session name, restricting it to characters that are safe
+/// to interpolate into the remote shell command and that tmux itself allows
+/// (tmux uses `:` and `.` as target-spec separators).
+fn validate_session_name(name: &str) -> &str {
+    let valid = !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    if !valid {
+        eprintln!("invalid -s argument: {name}");
+        eprintln!("session names may only contain letters, digits, '-' and '_'");
+        std::process::exit(2);
+    }
+    name
+}
+
 struct Args {
     command: Option<String>,
     forwards: Vec<String>,
+    session: Option<String>,
 }
 
 fn parse_args(raw: Vec<String>) -> Args {
     let mut command = None;
     let mut forwards = Vec::new();
+    let mut session = None;
     let mut iter = raw.into_iter();
 
     while let Some(arg) = iter.next() {
@@ -180,6 +198,13 @@ fn parse_args(raw: Vec<String>) -> Args {
                 });
                 forwards.push(validate_forward_spec(&spec).to_string());
             }
+            "-s" | "--session" => {
+                let name = iter.next().unwrap_or_else(|| {
+                    eprintln!("{arg} requires an argument, e.g. {arg} work");
+                    std::process::exit(2);
+                });
+                session = Some(validate_session_name(&name).to_string());
+            }
             other if command.is_none() => command = Some(other.to_string()),
             other => {
                 eprintln!("unexpected argument: {other}");
@@ -188,7 +213,11 @@ fn parse_args(raw: Vec<String>) -> Args {
         }
     }
 
-    Args { command, forwards }
+    Args {
+        command,
+        forwards,
+        session,
+    }
 }
 
 fn main() {
@@ -207,11 +236,28 @@ fn main() {
     let args = parse_args(raw_args);
 
     match args.command.as_deref() {
-        None | Some("connect") => run_ssh(&config, &args.forwards, Some("tmux new -As default")),
-        Some("ssh") => run_ssh(&config, &args.forwards, None),
+        None | Some("connect") => {
+            let session = args.session.as_deref().unwrap_or("default");
+            run_ssh(
+                &config,
+                &args.forwards,
+                Some(&format!("tmux new -As {session}")),
+            )
+        }
+        Some("ssh") => {
+            if args.session.is_some() {
+                eprintln!("-s is only supported with the connect command");
+                std::process::exit(2);
+            }
+            run_ssh(&config, &args.forwards, None)
+        }
         Some("status") => {
             if !args.forwards.is_empty() {
                 eprintln!("-L is only supported with the connect and ssh commands");
+                std::process::exit(2);
+            }
+            if args.session.is_some() {
+                eprintln!("-s is only supported with the connect command");
                 std::process::exit(2);
             }
             run_status(&config)
@@ -219,7 +265,7 @@ fn main() {
         Some(other) => {
             eprintln!("unknown command: {other}");
             eprintln!(
-                "usage: reflector [connect|ssh|status] [-L bind_address:port:host:hostport]..."
+                "usage: reflector [connect|ssh|status] [-L bind_address:port:host:hostport]... [-s session]"
             );
             std::process::exit(2);
         }

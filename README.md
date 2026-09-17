@@ -19,6 +19,13 @@ same syntax as `ssh -L`:
 reflector connect -L 5000:127.0.0.1:5000
 ```
 
+Pass `-s`/`--session` to attach to a different tmux session name instead of
+`default`:
+
+```sh
+reflector connect -s work
+```
+
 Use `ssh` instead of `connect` for a plain SSH session (no tmux):
 
 ```sh
